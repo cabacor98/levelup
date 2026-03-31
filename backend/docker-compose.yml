@@ -1,0 +1,35 @@
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: levelup-postgres
+    environment:
+      POSTGRES_DB: levelupdb
+      POSTGRES_USER: levelup
+      POSTGRES_PASSWORD: levelup123
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U levelup -d levelupdb"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  app:
+    build:
+      context: .
+    container_name: levelup-api
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/levelupdb
+      SPRING_DATASOURCE_USERNAME: levelup
+      SPRING_DATASOURCE_PASSWORD: levelup123
+      SPRING_PROFILES_ACTIVE: docker
+    ports:
+      - "18080:8080"
+
+volumes:
+  postgres_data:
