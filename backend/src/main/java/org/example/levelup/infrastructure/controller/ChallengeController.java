@@ -1,5 +1,9 @@
 package org.example.levelup.infrastructure.controller;
 
+import java.time.LocalDateTime;
+import org.example.levelup.infrastructure.persistence.entity.Log;
+import org.example.levelup.infrastructure.persistence.repository.LogRepository;
+
 import java.net.URI;
 import java.util.List;
 
@@ -28,14 +32,21 @@ import jakarta.validation.Valid;
 @Validated
 public class ChallengeController {
     private final ChallengeService challengeService;
+    private final LogRepository logRepository;
 
-    public ChallengeController(ChallengeService challengeService) {
+    public ChallengeController(ChallengeService challengeService, LogRepository logRepository) {
         this.challengeService = challengeService;
+        this.logRepository = logRepository;
     }
 
     @PostMapping
     public ResponseEntity<ChallengeResponse> create(@RequestBody @Valid ChallengeRequest request) {
         ChallengeResponse response = challengeService.create(request);
+
+        logRepository.save(
+            new Log("Se creó un challenge con ID: " + response.id(), LocalDateTime.now())
+        );
+
         URI location = ServletUriComponentsBuilder.fromCurrentRequest()
                 .path("/{id}")
                 .buildAndExpand(response.id())
@@ -45,6 +56,11 @@ public class ChallengeController {
 
     @GetMapping
     public List<ChallengeResponse> findAll(@RequestParam(required = false) Long userId) {
+
+        logRepository.save(
+            new Log("Se consultaron challenges", LocalDateTime.now())
+        );
+
         if (userId != null) {
             return challengeService.findByUserId(userId);
         }
@@ -69,6 +85,11 @@ public class ChallengeController {
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> delete(@PathVariable Long id) {
         challengeService.delete(id);
+
+        logRepository.save(
+            new Log("Se eliminó challenge con ID: " + id, LocalDateTime.now())
+        );
+
         return ResponseEntity.noContent().build();
     }
 }
